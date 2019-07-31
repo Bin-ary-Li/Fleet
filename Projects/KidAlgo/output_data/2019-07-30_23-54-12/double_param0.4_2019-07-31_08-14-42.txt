@@ -1,0 +1,49 @@
+./main --alphabet=BRG --data=G/,/RR\;G/,/RR,G/,/RR\;G/,/RR,G/,/RR,G/,/RR --param=0.4 --threads=12 --top=10000 --time=20m
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Running Fleet on binli-HP-Z420-Workstation with PID=7014 by user binli at Wed Jul 31 08:14:42 2019
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Executable checksum: 65f9670c8a5c502caf7ddd64b5a452b3  /proc/7014/exe
+# 	 --input=input.txt
+# 	 --threads=12
+# 	 --mcmc=0
+# 	 --mcts=0
+# 	 --time=20m (1200 seconds)
+# 	 --restart=0
+# 	 --seed=0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-18.2788	"B,B,B,B,B,B,B,B,B,R"
+-18.2704	",R,R,R,R,R,R,R,R,B"
+-18.2641	"G,B,B,B,B,B,B,B,B,B"
+-18.2191	"B,R,R,R,R,R,R,R,R,"
+-18.2041	",B,B,B,B,B,B,B,B,R"
+-18.2037	",,,,,,,,,B"
+-18.2037	"B,,,,,,,,,"
+-18.1863	"G,B,B,B,B,B,B,B,B,"
+-18.0137	"R,G,G,G,G,G,G,G,G,"
+-17.7274	",R,R,R,R,R,R,R,R,G"
+-17.6708	"B,G,G,G,G,G,G,G,G,G"
+-17.5946	"B,B,B,B,B,B,B,B,B,"
+-17.5918	",B,B,B,B,B,B,B,B,B"
+-17.3972	"R,R,R,R,R,R,R,R,R,B"
+-17.3607	",,,,,,,,,G"
+-17.3607	"R,,,,,,,,,"
+-17.2148	",G,G,G,G,G,G,G,G,R"
+-17.1781	"R,G,G,G,G,G,G,G,G,G"
+-16.8698	"G,R,R,R,R,R,R,R,R,"
+-16.8158	",,,,,,,,,R"
+-16.8146	"R,R,R,R,R,R,R,R,R,G"
+-16.8084	"G,,,,,,,,,"
+-16.7715	"G,G,G,G,G,G,G,G,G,B"
+-16.7663	"B,R,R,R,R,R,R,R,R,R"
+-16.213	",,,,,,,,,"
+-16.2037	",G,G,G,G,G,G,G,G,G"
+-15.8823	"R,R,R,R,R,R,R,R,R,"
+-15.4058	"G,G,G,G,G,G,G,G,G,G"
+-15.4008	"R,R,R,R,R,R,R,R,R,R"
+-15.3702	"G,G,G,G,G,G,G,G,G,"
+-15.3594	",R,R,R,R,R,R,R,R,R"
+-15.2014	"G,G,G,G,G,G,G,G,G,R"
+-15.181	"G,R,R,R,R,R,R,R,R,R"
+# Global sample count:	405528882
+# Elapsed time:	1200.08 seconds 
+# Samples per second:	337919

@@ -20,8 +20,12 @@ using S = std::string; // just for convenience
 S alphabet = "01"; // the alphabet we use (possibly specified on command line)
 //S datastr  = "01,01011,010110111"; // the data, comma separated
 S datastr  = "011;011011;011011011"; // the data, escape-semicolon separated
+S editDisStr = "1.0";
+
+
+
 const double strgamma = 0.99; // penalty on string length
-const double editDisParam = 2.0;
+double editDisParam;
 
 // Define a grammar
 class MyGrammar : public Grammar { 
@@ -184,9 +188,11 @@ int main(int argc, char** argv){
 	// default include to process a bunch of global variables: mcts_steps, mcc_steps, etc
 	auto app = Fleet::DefaultArguments();
 	app.add_option("-a,--alphabet", alphabet, "Alphabet we will use"); 	// add my own args
-	app.add_option("-d,--data", datastr, "escape-semicolon separated list of input data strings");	
+	app.add_option("-d,--data", datastr, "escape-semicolon separated list of input data strings");
+	app.add_option("-p,--param", editDisStr, "edit distance parameter");		
 	CLI11_PARSE(app, argc, argv);
-	
+
+	editDisParam = std::stod(editDisStr);
 	top.set_size(ntop); // set by above macro
 
 	Fleet_initialize(); // must happen afer args are processed since the alphabet is in the grammar

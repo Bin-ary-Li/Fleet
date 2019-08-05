@@ -10,7 +10,7 @@ mkdir "$output_date_dir"
 data=("R/,/G\;R/,/G,R/,/G\;R/,/G,R/,/G,R/,/G" "/RB,GB/\;/RB,GB/,/RB,GB/\;/RB,GB/,/RB,GB/,/RB,GB/" "G/,/RR\;G/,/RR,G/,/RR\;G/,/RR,G/,/RR,G/,/RR")
 name=("sort" "hitch" "double")
 
-param=(2.0 1.0 0.9 0.8 0.7 0.6 0.5 0.4 0.3)
+param=(8.0 6.0 4.0 0.97 0.95 0.92 0.87 0.85 0.82 0.77 0.75 0.72)
 
 cnt=0
 

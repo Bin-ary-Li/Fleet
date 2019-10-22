@@ -5,7 +5,7 @@
 // generates nodes with them, and then dispatch down below gets called with a switch
 // statement to see how to execute aech of them. 
 enum class CustomOp {
-	op_STREQ,op_EMPTYSTRING,op_EMPTY,op_A,op_CDR,op_CAR,op_CONS,op_REPEAT,op_NUM,op_SEPERATOR,op_ACTION
+	op_STREQ,op_EMPTYSTRING,op_EMPTY,op_A,op_CDR,op_CAR,op_CONS,op_REPEAT,op_NUM,op_SEPERATOR,op_ACTION,op_FIRST,op_SECOND
 };
 
 // Define our types. 
@@ -24,8 +24,38 @@ S editDisStr = "1.0";
 
 
 
+// parsing method for extracting input data point, e.g: "GGG/,/RR" will be extracted as "G/R"
+#include <string>
+#include <iostream>
+#include <vector>
+#include <unordered_set>
+
+using namespace std;
+
+
+
 const double strgamma = 0.99; // penalty on string length
 double editDisParam;
+
+
+
+static string orderedDistinctLetter(const string& inputStr, const unsigned int index) {
+        string result = "";
+        unordered_set<char> visited;
+        for(const auto& c : inputStr) {
+                if (visited.count(c) == 0 && isalpha(c)) {
+                        result += c;
+                        visited.insert(c);
+                }
+        }
+        
+        if (index == -1) {
+                return result;
+        } else {
+                return string(1, result[min(index, (unsigned int)(result.size()))]);
+        }
+}
+
 
 // Define a grammar
 class MyGrammar : public Grammar { 
@@ -36,8 +66,13 @@ public:
 
 		// here we create an alphabet op with an "arg" that is unpacked below to determine
 		// which character of the alphabet it corresponds to 
-		for(size_t i=0;i<alphabet.length();i++)
-			add( new Rule(nt_string, CustomOp::op_A,            alphabet.substr(i,1),          {},                   10.0/alphabet.length(), i) );
+		
+		// for(size_t i=0;i<alphabet.length();i++)
+			// add( new Rule(nt_string, CustomOp::op_A,            alphabet.substr(i,1),          {},                   10.0/alphabet.length(), i) );
+
+		// finding distinct letters in the input and use them as alphabet
+		add( new Rule(nt_string, CustomOp::op_FIRST,  "1st(%s)",           {nt_string},       1.0) );		
+		add( new Rule(nt_string, CustomOp::op_SECOND,  "2nd(%s)",           {nt_string},       1.0) );
 
 		add( new Rule(nt_string, CustomOp::op_EMPTYSTRING,  "''",           {},                               1.0) );
 
@@ -98,7 +133,6 @@ public:
 	// compute likelihood in term of the levenshtein distance
 	double compute_single_likelihood(const t_datum& x) {
 		auto out = call(x.input, "<err>", this, 256, 256); //256, 256);
-		
 		// a likelihood based on the levenshtein distance between hypothesis string and result string
 		double lp = -infinity;
 		for(auto o : out.values()) { // add up the probability from all of the strings
@@ -117,7 +151,8 @@ public:
 			// an abort			
 			
 			// when we process op_A, we unpack the "arg" into an index into alphabet
-			CASE_FUNC0(CustomOp::op_A,           S,          [i](){ return alphabet.substr(i.arg, 1);} )
+			// CASE_FUNC0(CustomOp::op_A,           S,          [i](){ return alphabet.substr(i.arg, 1);} )
+
 			// the rest are straightforward:
 			CASE_FUNC0(CustomOp::op_EMPTYSTRING, S,          [](){ return S("");} )
 			CASE_FUNC1(CustomOp::op_EMPTY,       bool,  S,   [](const S& s){ return s.size()==0;} )
@@ -125,6 +160,8 @@ public:
 			CASE_FUNC1(CustomOp::op_CDR,         S, S,       [](const S& s){ return (s.empty() ? S("") : s.substr(1,S::npos)); } )		
 			CASE_FUNC1(CustomOp::op_CAR,         S, S,       [](const S& s){ return (s.empty() ? S("") : S(1,s.at(0))); } )		
 		
+			CASE_FUNC1(CustomOp::op_FIRST,       S, S, [](const S& a){return orderedDistinctLetter(a,0);} )
+			CASE_FUNC1(CustomOp::op_SECOND,       S, S, [](const S& a){return orderedDistinctLetter(a,1);} )
 			
 			CASE_FUNC2e(CustomOp::op_CONS,       S, S,S,
 								[](const S& x, const S& y){ S a = x; a.append(y); return a; },
@@ -207,10 +244,10 @@ int main(int argc, char** argv){
 	
 	// we will parse the data from a comma-separated list of "data" on the command line
 	for(auto di : split(datastr, ';')) {
-		mydata.push_back( MyHypothesis::t_datum({S(""), di}) );
+		// mydata.push_back( MyHypothesis::t_datum({S(""), di}) );
+		mydata.push_back( MyHypothesis::t_datum({orderedDistinctLetter(di,-1), di}) );
 		CERR "# Data: " << di ENDL; // output data to check
 	}
-	cout << "# Edit Distance Paramter: " << editDisStr << endl;
 	
 	//------------------
 	// Run
@@ -221,18 +258,15 @@ int main(int argc, char** argv){
 	
 	tic(); // start the timer
 	ParallelTempering<MyHypothesis> samp(h0, &mydata, callback, 8, 1000.0, false);
-	samp.run(mcmc_steps, runtime, 200, 3000); //30000);
-
+	samp.run(mcmc_steps, runtime, 200, 3000); //30000);	
 	tic(); // end timer
+
 	
 //	tic();
 //	auto thechain = MCMCChain<MyHypothesis>(h0, &mydata, callback);
 //	thechain.run(mcmc_steps, runtime);
 //	tic();
 //	
-
-
-
 	// double Z = top.Z();
 	
 	// // We have a bunch of hypotheses in "top"
@@ -270,6 +304,7 @@ int main(int argc, char** argv){
 			}
 		} 
 	}
+	
 	
 	COUT "# Global sample count:" TAB FleetStatistics::global_sample_count ENDL;
 	COUT "# Elapsed time:" TAB elapsed_seconds() << " seconds " ENDL;

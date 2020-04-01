@@ -132,7 +132,9 @@ public:
 
 	// compute likelihood in term of the levenshtein distance
 	double compute_single_likelihood(const t_datum& x) {
-		auto out = call(x.input, "<err>", this, 256, 256); //256, 256);
+		// auto out = call(x.input, "<err>", this, 256, 256); //256, 256);
+		auto out = call(orderedDistinctLetter(x.input,-1), "<err>", this, 256, 256); //256, 256);
+
 		// a likelihood based on the levenshtein distance between hypothesis string and result string
 		double lp = -infinity;
 		for(auto o : out.values()) { // add up the probability from all of the strings
@@ -245,7 +247,7 @@ int main(int argc, char** argv){
 	// we will parse the data from a comma-separated list of "data" on the command line
 	for(auto di : split(datastr, ';')) {
 		// mydata.push_back( MyHypothesis::t_datum({S(""), di}) );
-		mydata.push_back( MyHypothesis::t_datum({orderedDistinctLetter(di,-1), di}) );
+		mydata.push_back( MyHypothesis::t_datum({di, di}) );
 		CERR "# Data: " << di ENDL; // output data to check
 	}
 	
@@ -292,16 +294,16 @@ int main(int argc, char** argv){
 	top.print();
 
 	for(auto h : top.values()) {
-		auto o = h.call(S(""), S("<err>"), &h, 2048, 2048, -20.0);
+		auto o = h.call(S("B/,/W,B/,/W"), S("<err>"), &h, 2048, 2048, -20.0);
 
 		int cnt = 0;
 		for(auto& s : o.values()) { // for each string in the output
 			cout << s.first << "\n";
 			cnt++;
-			if (cnt > 0) {
-				cnt = 0;
-				break;
-			}
+			// if (cnt > 0) {
+			// 	cnt = 0;
+			// 	break;
+			// }
 		} 
 	}
 	

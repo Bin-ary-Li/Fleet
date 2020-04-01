@@ -1,172 +1,140 @@
 
-// We require an enum to define our custom operations as a string before we import Fleet
-// These are the internal symbols that are used to represent each operation. The grammar
-// generates nodes with them, and then dispatch down below gets called with a switch
-// statement to see how to execute aech of them. 
-enum class CustomOp {
-	op_STREQ,op_EMPTYSTRING,op_EMPTY,op_A,op_CDR,op_CAR,op_CONS,op_REPEAT,op_NUM
-};
+#include <string>
 
-// Define our types. 
-#define NT_TYPES bool,std::string
-#define NT_NAMES nt_bool,nt_string
+using S = std::string; // just for convenience
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/// Set up some basic variables (which may get overwritten)
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+S alphabet = "01"; // the alphabet we use (possibly specified on command line)
+//S datastr = "1011001110";
+//S datastr  = "011,011011,011011011"; // the data, comma separated
+//S datastr = "01,01001";
+S datastr  = "01,01001,010010001,01001000100001"; // the data, comma separated
+const double strgamma = 0.95; //75; // penalty on string length
+const size_t MAX_LENGTH = 64; // longest strings cons will handle
+	
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/// These define all of the types that are used in the grammar.
+/// This macro must be defined before we import Fleet.
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#define FLEET_GRAMMAR_TYPES S,bool
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/// This is a global variable that provides a convenient way to wrap our primitives
+/// where we can pair up a function with a name, and pass that as a constructor
+/// to the grammar. We need a tuple here because Primitive has a bunch of template
+/// types to handle thee function it has, so each is actually a different type.
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#include "Primitives.h"
+#include "Builtins.h"
+
+std::tuple PRIMITIVES = {
+	Primitive("tail(%s)",      +[](S s)      -> S          { return (s.empty() ? S("") : s.substr(1,S::npos)); }),
+	Primitive("head(%s)",      +[](S s)      -> S          { return (s.empty() ? S("") : S(1,s.at(0))); }),
+	// We could call like this, but it's a little inefficient since it pops a string from the stack
+	// and then pushes a result on.. much better to modify it
+//	Primitive("pair(%s,%s)",   +[](S a, S b) -> S          { if(a.length() + b.length() > MAX_LENGTH) 
+//																throw VMSRuntimeError;
+//															else return a+b; 
+//															}),
+	// This version takes a reference for the first argument and that is assumed (by Fleet) to be the
+	// return value. It is never popped off the stack and should just be modified. 
+	Primitive("pair(%s,%s)",   +[](S& a, S b) -> void        { 
+			if(a.length() + b.length() > MAX_LENGTH) 
+				throw VMSRuntimeError;
+			a = a+b; // modify on stack
+	}), 
+	
+	Primitive("\u00D8",        +[]()         -> S          { return S(""); }),
+	Primitive("(%s==%s)",      +[](S x, S y) -> bool       { return x==y; }),
+	
+	Primitive("and(%s,%s)",    +[](bool a, bool b) -> bool { return (a and b); }), // optional specification of prior weight (default=1.0)
+	Primitive("or(%s,%s)",     +[](bool a, bool b) -> bool { return (a or b); }),
+	Primitive("not(%s)",       +[](bool a)         -> bool { return (not a); }),
+	
+	
+	// And add built-ins:
+	Builtin::If<S>("if(%s,%s,%s)", 1.0),		
+	Builtin::X<S>("x"),
+	Builtin::Flip("flip()", 10.0),
+	Builtin::SafeRecurse<S,S>("F(%s)")	
+};
 
 // Includes critical files. Also defines some variables (mcts_steps, explore, etc.) that get processed from argv 
 #include "Fleet.h" 
 
-using S = std::string; // just for convenience
-
-S alphabet = "01"; // the alphabet we use (possibly specified on command line)
-//S datastr  = "01,01011,010110111"; // the data, comma separated
-S datastr  = "011,011011,011011011"; // the data, comma separated
-const double strgamma = 0.99; // penalty on string length
-
-// Define a grammar
-class MyGrammar : public Grammar { 
+class MyHypothesis : public LOTHypothesis<MyHypothesis,Node,S,S> {
 public:
-	MyGrammar() : Grammar() {
-		add( new Rule(nt_string, BuiltinOp::op_X,            "x",            {},                               10.0) );		
-		add( new Rule(nt_string, BuiltinOp::op_RECURSE,      "F(%s)",        {nt_string},                      2.0) );		
-
-		// here we create an alphabet op with an "arg" that is unpacked below to determine
-		// which character of the alphabet it corresponds to 
-		for(size_t i=0;i<alphabet.length();i++)
-			add( new Rule(nt_string, CustomOp::op_A,            alphabet.substr(i,1),          {},                   10.0/alphabet.length(), i) );
-
-		add( new Rule(nt_string, CustomOp::op_EMPTYSTRING,  "''",           {},                               1.0) );
-		
-		add( new Rule(nt_string, CustomOp::op_CONS,         "cons(%s,%s)",  {nt_string,nt_string},            1.0) );
-		add( new Rule(nt_string, CustomOp::op_CAR,          "car(%s)",      {nt_string},                      1.0) );
-		add( new Rule(nt_string, CustomOp::op_CDR,          "cdr(%s)",      {nt_string},                      1.0) );
-		
-		add( new Rule(nt_string, BuiltinOp::op_IF,           "if(%s,%s,%s)", {nt_bool, nt_string, nt_string},  1.0) );
-		
-		add( new Rule(nt_bool,   BuiltinOp::op_FLIP,         "flip()",       {},                               5.0) );
-		add( new Rule(nt_bool,   CustomOp::op_EMPTY,        "empty(%s)",    {nt_string},                      1.0) );
-		add( new Rule(nt_bool,   CustomOp::op_STREQ,        "(%s==%s)",     {nt_string,nt_string},            1.0) );
-	}
-};
-
-
-/* Define a class for handling my specific hypotheses and data. Everything is defaulty a PCFG prior and 
-// * regeneration proposals, but I have to define a likelihood */
-class MyHypothesis : public LOTHypothesis<MyHypothesis,Node,nt_string, S, S> {
-public:
-	using Super =  LOTHypothesis<MyHypothesis,Node,nt_string, S, S>;
+	using Super =  LOTHypothesis<MyHypothesis,Node,S,S>;
+	using Super::Super; // inherit the constructors
 	
-	static const size_t MAX_LENGTH = 64; // longest strings cons will handle
-	
-	// I must implement all of these constructors
-	MyHypothesis(Grammar* g, Node v)    : Super(g,v) {}
-	MyHypothesis(Grammar* g)            : Super(g) {}
-	MyHypothesis()                      : Super() {}
-	
-	// Very simple likelihood that just counts up the probability assigned to the output strings
-//	double compute_single_likelihood(const t_datum& x) {
-//		auto out = call(x.input, "<err>");
-//		return logplusexp( log(x.reliability)+(out.count(x.output)?out[x.output]:-infinity),  // probability of generating the output
-//					       log(1.0-x.reliability) + (x.output.length())*(log(1.0-gamma) + log(0.5)) + log(gamma) // probability under noise; 0.5 comes from alphabet size
-//						   );
-//	}
-	double compute_single_likelihood(const t_datum& x) {
+	double compute_single_likelihood(const t_datum& x) override {	
 		auto out = call(x.input, "<err>", this, 256, 256); //256, 256);
 		
-		// a likelihood based on the prefix probability -- we assume that we generate from the hypothesis
-		// and then might glue on some number of additional strings, flipping a gamma-weighted coin to determine
-		// how many to add
+		// Likelihood comes from all of the ways that we can delete from the end and the append to make the observed output. 
 		double lp = -infinity;
-		for(auto o : out.values()) { // add up the probability from all of the strings
-			if(is_prefix(o.first, x.output)) {
-				lp = logplusexp(lp, o.second + log(strgamma) + log((1.0-strgamma)/alphabet.length()) * (x.output.length() - o.first.length()));
-			}
+		for(auto& o : out.values()) { // add up the probability from all of the strings
+			lp = logplusexp(lp, o.second + p_delete_append(o.first, x.output, 1.-strgamma, 1.-strgamma, alphabet.size()));
 		}
 		return lp;
 	}
-	
-	abort_t dispatch_rule(Instruction i, VirtualMachinePool<S,S>* pool, VirtualMachineState<S,S>& vms, Dispatchable<S,S>* loader ) {
-		/* Dispatch the functions that I have defined. Returns NO_ABORT on success. 
-		 * */
-		switch(i.getCustom()) {
-			// this uses CASE_FUNCs which are defined in CaseMacros.h, and which give a nice interface for processing the
-			// different cases. They take a return type, some input types, and a functino to evaluate. 
-			// as in op_CONS below, this function (CASE_FUNC2e) can take an "error" (e) condition, which will cause
-			// an abort			
-			
-			// when we process op_A, we unpack the "arg" into an index into alphabet
-			CASE_FUNC0(CustomOp::op_A,           S,          [i](){ return alphabet.substr(i.arg, 1);} )
-			// the rest are straightforward:
-			CASE_FUNC0(CustomOp::op_EMPTYSTRING, S,          [](){ return S("");} )
-			CASE_FUNC1(CustomOp::op_EMPTY,       bool,  S,   [](const S& s){ return s.size()==0;} )
-			CASE_FUNC2(CustomOp::op_STREQ,       bool,  S,S, [](const S& a, const S& b){return a==b;} )
-			CASE_FUNC1(CustomOp::op_CDR,         S, S,       [](const S& s){ return (s.empty() ? S("") : s.substr(1,S::npos)); } )		
-			CASE_FUNC1(CustomOp::op_CAR,         S, S,       [](const S& s){ return (s.empty() ? S("") : S(1,s.at(0))); } )		
-//			CASE_FUNC2e(CustomOp::op_REPEAT,      S,  S, int, [](const S& a, const int i){
-//				S out;
-//				for(int j=0;j<i;j++) out = out + a;
-//				return out;				
-//				},
-//				[](const S& x, const int i){ return (x.length()*i<MAX_LENGTH ? abort_t::NO_ABORT : abort_t::SIZE_EXCEPTION ); }
-//			)
-//			CASE_FUNC0(CustomOp::op_NUM,         int,       [i](){ return i.arg; } )		
-			
-			
-			CASE_FUNC2e(CustomOp::op_CONS,       S, S,S,
-								[](const S& x, const S& y){ S a = x; a.append(y); return a; },
-								[](const S& x, const S& y){ return (x.length()+y.length()<MAX_LENGTH ? abort_t::NO_ABORT : abort_t::SIZE_EXCEPTION ); }
-								)
-			default:
-				assert(0 && " *** You ended up with an invalid argument"); // should never get here
+		
+	[[nodiscard]] virtual std::pair<MyHypothesis,double> propose() const override {
+		
+		std::pair<Node,double> x;
+		if(flip()) {
+			x = Proposals::regenerate(grammar, value);	
 		}
-		return abort_t::NO_ABORT;
-	}
+		else {
+			if(flip()) x = Proposals::insert_tree(grammar, value);	
+			else       x = Proposals::delete_tree(grammar, value);	
+		}
+		return std::make_pair(MyHypothesis(this->grammar, std::move(x.first)), x.second); 
+	}	
+//
+//	[[nodiscard]] virtual std::pair<MyHypothesis,double> propose() const {
+//		auto g = grammar->generate<S>();
+//		return std::make_pair(MyHypothesis(grammar, g), grammar->log_probability(g) - grammar->log_probability(value));
+//	}	
 	
-	void print(std::string prefix="") {
-		extern TopN<MyHypothesis> top;
-		assert(prefix == "");
-		
-		prefix  = "#\n#" +  this->call("", "<err>").string() + "\n"; 
-		prefix += std::to_string(top.count(*this)) + "\t";
-		
-		Super::print(prefix); // print but prepend my top count
+	void print(std::string prefix="") override {
+		// we're going to make this print by showing the language we created on the line before
+		prefix = prefix+"#\n#" +  this->call("", "<err>").string() + "\n";
+//		prefix += str(grammar->compute_enumeration_order(value)) + "\t"; 
+		Super::print(prefix); 
 	}
 };
-
-
-// mydata stores the data for the inference model
-MyHypothesis::t_data mydata;
-// top stores the top hypotheses we have found
-TopN<MyHypothesis> top;
-
-// This gets called on every sample -- here we add it to our best seen so far (top) and
-// print it every thin samples unless thin=0
-void callback(MyHypothesis& h) {
-	
-	// add to the top
-	top << h; 
-	
-	// print out with thinning
-	if(thin > 0 && FleetStatistics::global_sample_count % thin == 0) 
-		h.print();
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv){ 
-	using namespace std;
 	
 	// default include to process a bunch of global variables: mcts_steps, mcc_steps, etc
-	auto app = Fleet::DefaultArguments();
+	auto app = Fleet::DefaultArguments("A simple, one-factor formal language learner");
 	app.add_option("-a,--alphabet", alphabet, "Alphabet we will use"); 	// add my own args
-	app.add_option("-d,--data", datastr, "Comma separated list of input data strings");	
+	app.add_option("-d,--data",     datastr, "Comma separated list of input data strings");	
 	CLI11_PARSE(app, argc, argv);
-	
-	top.set_size(ntop); // set by above macro
-
 	Fleet_initialize(); // must happen afer args are processed since the alphabet is in the grammar
 	
-	// declare a grammar
-	MyGrammar grammar;
+	// mydata stores the data for the inference model
+	MyHypothesis::t_data mydata;
+	
+	// top stores the top hypotheses we have found
+	Fleet::Statistics::TopN<MyHypothesis> top(ntop);
+	
+	// declare a grammar with our primitives
+	Grammar grammar(PRIMITIVES);
+	
+	// here we create an alphabet op with an "arg" that stores the character (this is faster than alphabet.substring with i.arg as an index) 
+	// here, op_ALPHABET converts arg to a string (and pushes it)
+	for(size_t i=0;i<alphabet.length();i++) {
+		grammar.add<S>     (BuiltinOp::op_ALPHABET, Q(alphabet.substr(i,1)), 5.0/alphabet.length(), (int)alphabet.at(i)); 
+	}
 	
 	//------------------
 	// set up the data
@@ -177,43 +145,100 @@ int main(int argc, char** argv){
 		mydata.push_back( MyHypothesis::t_datum({S(""), di}) );
 	}
 	
-	// simple pattern
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("01011"), 0.99}) );
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("0101101011"), 0.99}) );
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("010110101101011"), 0.99}) );
-
-	// Fibonacci data:
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("01011"), 0.99}) );
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("010110111"), 0.99}) );
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("010110111011111"), 0.99}) );
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("010110111011111011111111"), 0.99}) );
-
-	// increasing count data
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("01011"), 0.99}) );
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("010110111"), 0.99}) );
-//	mydata.push_back( MyHypothesis::t_datum({S(""), S("01011011101111"), 0.99}) );
-
 	//------------------
 	// Run
 	//------------------
+
+			
+//	auto v = grammar.expand_from_names("F:NULL");
+//	
+//	auto nt = v.nt();
+//	std::function isnt = [nt](const Node& n){ return (int)(n.nt() == nt and not n.is_null() );};
+//	
+//	CERR v.string() ENDL;
+//	CERR v.get_nth(0, isnt)->string() ENDL;
+
+//	IntegerizedStack is;
+//	is.push(12);
+//	is.push(33);
+//	is.push(400);
+//	CERR is.get_value() ENDL;
+//	CERR is.pop() ENDL;
+//	CERR is.pop() ENDL;
+//	CERR is.pop() ENDL;
+//	CERR is.pop() ENDL;
+//	
+	
+//	Fleet::Statistics::TopN<MyHypothesis> tn(10);
+//	for(enumerationidx_t z=0;z<10000000 and !CTRL_C;z++) {
+////		auto n = grammar.expand_from_integer(0, z);
+//		auto n = grammar.lempel_ziv_full_expand(0, z);
+//		
+//		MyHypothesis h(&grammar);
+//		h.set_value(n);
+//		h.compute_posterior(mydata);
+//		
+//		tn << h;
+//		auto o  = grammar.compute_enumeration_order(n);
+//		COUT z TAB o TAB h.posterior TAB h ENDL;
+//	}
+//	tn.print();
+//
+//	return 0;
 	
 	MyHypothesis h0(&grammar);
+	h0 = h0.restart();
 
+//	MyHypothesis h(&grammar);
+//	h = h.restart();
+//	h.compute_posterior(mydata);
+//	for(size_t i=0;i<mcmc_steps and !CTRL_C;i++) {
+//		auto [p,fb] = h.propose();
+//		p.compute_posterior(mydata);
+//		if( uniform() < exp(p.posterior - h.posterior - fb) ) {
+//			h = p;
+//		}
+//		top << h;
+//	}
+
+//	for(size_t i =0;i<100;i++) {
+//		MyHypothesis h = h0.restart();
+//		CERR grammar.log_probability(h.value) TAB h ENDL;
+//	}
+//	
+//	return 0;
+	
+//	COUT h0 ENDL;
+//	for(auto& x : h0.value) {
+//		COUT x.can_resample TAB x ENDL;
+//	}
+//	
+//	for(size_t j=0;j<100;j++) {
+//		COUT sample<Node,Node>(h0.value, Proposals::can_resample).first->string() ENDL;
+//	}
+//	
+////	return 0;
+	
+	ParallelTempering samp(h0, &mydata, top, nchains, 1000.0);
 	tic();
-	auto thechain = MCMCChain<MyHypothesis>(h0, &mydata, callback);
-	thechain.run(mcmc_steps, runtime);
+	samp.run(Control(mcmc_steps, runtime, nthreads), 1000, 3000); //30000);		
 	tic();
 	
-//	ParallelTempering<MyHypothesis> samp(h0, &mydata, callback, 8, 1000.0, false);
+//	 Show the best we've found
+	top.print();
+
+	
+//	MCMCChain c(h0, &mydata, top);
 //	tic();
-//	samp.run(mcmc_steps, runtime, 200, 3000); //30000);		
+//	c.run(Control(mcmc_steps, runtime, nthreads));
 //	tic();
 //	
-	// Show the best we've found
-	top.print();
+//	for(auto& h : top.values()) {
+//		COUT top[h] TAB h.posterior TAB h.prior TAB h.likelihood TAB h.string() ENDL;		
+//	}
 	
 	COUT "# Global sample count:" TAB FleetStatistics::global_sample_count ENDL;
 	COUT "# Elapsed time:" TAB elapsed_seconds() << " seconds " ENDL;
 	COUT "# Samples per second:" TAB FleetStatistics::global_sample_count/elapsed_seconds() ENDL;
-	
+	COUT "# VM ops per second:" TAB FleetStatistics::vm_ops/elapsed_seconds() ENDL;
 }

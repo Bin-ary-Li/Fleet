@@ -1,97 +1,128 @@
 #pragma once
 
-template<typename T>
-class ReservoirSample {
-public:
+#include "Top.h"
 
-	class Item {
-	public:
-		T x;
-		double r; 
-		
-		Item(T x_, double r_) : x(x_), r(r_) {}
-		Item(const Item &i)        : x(i.x), r(i.r) { }
-		
-		bool operator<(const Item& b) const {
-			return r < b.r;
-		}
-		
-		bool operator==(const Item& b) const {
-			return x==b.x && r==b.r;
-		}
-	};
-	
-public:
+namespace Fleet {
+	namespace Statistics {
+				
 
-	std::multiset<Item>   s; //
-	std::multiset<T> vals; // store this so we can efficiently find the median
-	size_t reservoir_size;
-	bool unique; // do I allow multiple samples?
-	unsigned long N; // how many have I seen? An time I *try* to add something to this, N gets incremented
-	
-protected:
-	//mutable std::mutex lock;		
+		/**
+		 * @class ReservoirSample
+		 * @author piantado
+		 * @date 29/01/20
+		 * @file ReservoirSample.h
+		 * @brief A reservoir sampling algorithm. 
+		 * 		  NOTE: This was simplified from an old version that permitted unequal weights among elements. We may go back to that eventually - https://en.wikipedia.org/wiki/Reservoir_sampling#Weighted_random_sampling_
+		 * 
+		 * 		   NOTE: Because we use TopN internally, we can access the Item values with ReservoirSample.top.values() and we can get
+		 *               the stuff that's stored with ReservoirSample.values()
+		 */
+		template<typename T>
+		class ReservoirSample {
+			
+		public:
 
-public:
 
-	ReservoirSample(size_t n, bool u=false) : reservoir_size(n), unique(u), N(0) {
-	}
-	
-	ReservoirSample(bool u=false) : reservoir_size(1000), unique(u), N(0) {
-	}
-	
-	void set_size(const size_t s) const {
-		reservoir_size = s;
-	}
-	
-	size_t size() const {
-		// How many am I currently storing?
-		return s.size();
-	}
-	
-	T max(){ return *vals.rbegin(); }
-	T min(){ return *vals.begin(); }
-	
-	void add(T x) {
-		//std::lock_guard guard(lock);
-		
-		if((!unique) || vals.find(x) == vals.end()) {
-		
-			double r = uniform();
-			s.insert(Item(x,r));
-						
-			vals.insert(x);
-			while(s.size() > reservoir_size) {
-				auto i = s.begin(); // which one we remove -- last one since set stores things sorted
-				auto pos = vals.find(x); 
-				assert(pos != vals.end());
-				vals.erase(pos); // this only deletes one? 
-				s.erase(i); // erase the item
-				// NOTE: we might sometimes get identical x and r, and then this causes problems because it will delete all? Very rare though...
+			/**
+			 * @class Item
+			 * @author piantado
+			 * @date 29/01/20
+			 * @file ReservoirSample.h
+			 * @brief An item in a reservoir sample, grouping together an element x and its log weights, value, etc. 
+			 */
+			class Item {
+			public:
+				T x;
+				const double r; 
+				
+				Item(T x_, double r_) : x(x_), r(r_) {}
+				
+				bool operator<(const Item& b) const {
+					return r < b.r;
+				}
+				
+				bool operator==(const Item& b) const {
+					// equality here checks r and lw (which determine lv)
+					return x==b.x && r==b.r;
+				}
+				
+				void print() const {
+					assert(0); // not needed here but must be defined to use in TopN
+				}
+			};
+			
+		public:
+
+			Fleet::Statistics::TopN<Item> top;
+			unsigned long N; // how many have I seen? Any time I *try* to add something to this, N gets incremented
+			
+		protected:
+			//mutable std::mutex lock;		
+
+		public:
+
+			ReservoirSample(size_t n) : N(0){
+				top.set_size(n);
+			}	
+			ReservoirSample() : N(0) {
 			}
 			
-			assert( (!unique) or s.size() == vals.size());
-		}
-		
-		++N;
-		
+			void set_reservoir_size(const size_t s) const {
+				/**
+				 * @brief How big should the reservoir size be?
+				 * @param s
+				 */
+				top.set_size(s);
+			}
+			
+			size_t size() const {
+				/**
+				 * @brief How many elements are currently stored?
+				 * @return 
+				 */
+				return top.size();
+			}
+
+			void add(T x) {
+				//std::lock_guard guard(lock);
+				top << Item(x, uniform());
+				++N;				
+			}
+			void operator<<(T x) {	add(x); }
+			
+			
+			/**
+			 * @brief Get a multiset of values (ignoring the reservoir weights)
+			 * @return 
+			 */			
+			std::vector<T> values() const {
+				
+				std::vector<T> out;
+				for(auto& i : top.values()){
+					out.push_back(i.x);
+				}
+				return out;
+			}
+			
+			T sample() const {
+				/**
+				 * @brief Return a sample from my vals
+				 * @return 
+				 */
+				if(N == 0) return NaN;
+
+				auto it = top.s.begin();
+				
+				std::advance(it, myrandom(top.size()));
+				
+				return it->x;
+			}
+			
+			void clear() {
+				top.clear();
+			}
+			
+		};
+
 	}
-	void operator<<(T x) {	add(x);}
-	
-	// Return a sample from my vals (e.g. a sample of the samples I happen to have saved)
-	T sample() const {
-		//std::lock_guard guard(lock);
-		if(N == 0) return NaN;
-		std::uniform_int_distribution<int> sampler(0,vals.size()-1);
-		auto pos = vals.begin();
-		std::advance(pos, sampler(rng));
-		return *pos;
-	}
-	
-	auto begin() {
-		return vals.begin();
-	}
-	auto end() {
-		return vals.end();
-	}
-};
+}

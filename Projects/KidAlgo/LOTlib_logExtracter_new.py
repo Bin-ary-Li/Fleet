@@ -1,7 +1,3 @@
-
-import pandas
-import re
-
 sortOut = './KidAlgorithmTerminalLog/ModelLog_SortEditDis.txt'
 doubleOut = './KidAlgorithmTerminalLog/ModelLog_DoubleEditDis.txt'
 hitchOut = './KidAlgorithmTerminalLog/ModelLog_HitchEditDis.txt'
@@ -14,25 +10,11 @@ hitchDemo = "/RB,GB/\;/RB,GB/,/RB,GB/\;/RB,GB/,/RB,GB/,/RB,GB/"
 
 csvOutPath = './editDis.csv'
 
-
-sortStr = ''
-doubleStr = ''
-hitchStr = ''
-sortDict = {}
-doubleDict = {}
-hitchDict = {}
-with open(sortOut,'r') as f:
-	sortStr = f.read()
-with open(doubleOut,'r') as f:
-	doubleStr = f.read()
-with open(hitchOut,'r') as f:
-	hitchStr = f.read()
-
 newData = {'hypIndex':[], 'Hypothesis':[],'posteriorScore':[], 'ALGOTYPE':[],'DEMO':[],'STEP_Num':[], 'BallMoveCnt':[], 'Bucket':[],'RESPONSE':[]}
 
-sortResult = re.findall('\n-[0-9].*"',sortStr)
-doubleResult = re.findall('\n-[0-9].*"',doubleStr)
-hitchResult = re.findall('\n-[0-9].*"',hitchStr)
+
+
+
 
 def cleanupAlgoData (algoResult, algoDataDict):
 	for index, item in enumerate(algoResult): 
@@ -86,17 +68,48 @@ def writeDict (algoDataDict, algotype, demo, outputDict):
 						outputDict['BallMoveCnt'].append(BallMoveCnt)
 						BallMoveCnt += 1
 
-# cleanupAlgoData(sortResult, sortDict)
-# writeDict(sortDict, sortAlgoType, sortDemo, newData)
-
-cleanupAlgoData(doubleResult, doubleDict)
-writeDict(doubleDict, doubleAlgoType, doubleDemo, newData)
-
-# cleanupAlgoData(hitchResult, hitchDict)
-# writeDict(hitchDict, hitchAlgoType, hitchDemo, newData)
 
 
-
+import sys
 import pandas as pd
-df = pd.DataFrame(data=newData)
-df.to_csv(path_or_buf=csvOutPath, index=False)
+import re
+
+def main():
+    # print command line arguments
+   	sortOut = sys.argv[1]
+   	doubleOut = sys.argv[2]
+   	hitchOut = sys.argv[3]
+   	csvOutPath = sys.argv[4]
+
+   	sortStr = ''
+	doubleStr = ''
+	hitchStr = ''
+	sortDict = {}
+	doubleDict = {}
+	hitchDict = {}
+	with open(sortOut,'r') as f:
+		sortStr = f.read()
+	with open(doubleOut,'r') as f:
+		doubleStr = f.read()
+	with open(hitchOut,'r') as f:
+		hitchStr = f.read()
+	sortResult = re.findall('\n-[0-9].*"',sortStr)
+	doubleResult = re.findall('\n-[0-9].*"',doubleStr)
+	hitchResult = re.findall('\n-[0-9].*"',hitchStr)
+
+	cleanupAlgoData(sortResult, sortDict)
+	writeDict(sortDict, sortAlgoType, sortDemo, newData)
+
+	cleanupAlgoData(doubleResult, doubleDict)
+	writeDict(doubleDict, doubleAlgoType, doubleDemo, newData)
+
+	cleanupAlgoData(hitchResult, hitchDict)
+	writeDict(hitchDict, hitchAlgoType, hitchDemo, newData)
+
+
+
+	df = pd.DataFrame(data=newData)
+	df.to_csv(path_or_buf=csvOutPath, index=False)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,16 @@
+./main --alphabet=BRG --data=/RB,GB/\;/RB,GB/,/RB,GB/\;/RB,GB/,/RB,GB/,/RB,GB/ --param=6.0 --threads=12 --top=10000 --time=20m
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Running Fleet on binli-HP-Z420-Workstation with PID=15275 by user binli at Wed Jul 31 23:58:40 2019
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Executable checksum: 65f9670c8a5c502caf7ddd64b5a452b3  /proc/15275/exe
+# 	 --input=input.txt
+# 	 --threads=12
+# 	 --mcmc=0
+# 	 --mcts=0
+# 	 --time=20m (1200 seconds)
+# 	 --restart=0
+# 	 --seed=0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Global sample count:	309075324
+# Elapsed time:	1200.09 seconds 
+# Samples per second:	257543

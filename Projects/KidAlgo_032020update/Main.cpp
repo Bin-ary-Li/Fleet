@@ -1,31 +1,17 @@
 # include <algorithm>
 
-// We require an enum to define our custom operations as a string before we import Fleet
-// These are the internal symbols that are used to represent each operation. The grammar
-// generates nodes with them, and then dispatch down below gets called with a switch
-// statement to see how to execute aech of them. 
-enum class CustomOp {
-	op_STREQ,op_EMPTYSTRING,op_EMPTY,op_A,op_CDR,op_CAR,op_CONS,op_REPEAT,op_NUM,op_SEPERATOR,op_ACTION
-};
-
-// Define our types. 
-#define NT_TYPES bool,std::string
-#define NT_NAMES nt_bool,nt_string
-
-// Includes critical files. Also defines some variables (mcts_steps, explore, etc.) that get processed from argv 
-#include "Fleet.h" 
-
 using S = std::string; // just for convenience
 
 S alphabet = "01"; // the alphabet we use (possibly specified on command line)
 //S datastr  = "01,01011,010110111"; // the data, comma separated
 S datastr  = "011;011011;011011011"; // the data, escape-semicolon separated
-S editDisStr = "1.0";
 
 
 
+const size_t MAX_LENGTH = 64; // longest strings cons will handle
 const double strgamma = 0.99; // penalty on string length
-double editDisParam;
+const size_t NTEMPS = 8;
+double editDisParam = 1.0;
 
 
 
@@ -43,82 +29,57 @@ double editDisParam;
 #include "Builtins.h"
 
 std::tuple PRIMITIVES = {
-	Primitive("and(%s,%s)",     +[](bool a, bool b) -> bool { return (a and b); }, 2.0), // optional specification of prior weight (default=1.0)
-	Primitive("or(%s,%s)",      +[](bool a, bool b) -> bool { return (a or b); }),
-	Primitive("iff(%s,%s)",     +[](bool a, bool b) -> bool { return (a == b); }),
-	Primitive("xor(%s,%s)",     +[](bool a, bool b) -> bool { return (a xor b); }),
-	Primitive("implies(%s,%s)", +[](bool a, bool b) -> bool { return ((not a) or (a and b)); }),
-	Primitive("not(%s)",        +[](bool a)         -> bool { return (not a); }),
-	// that + is really insane, but is needed to convert a lambda to a function pointer
-
-	Primitive("yellow(%s)",    +[](Object x)       -> bool { return x.color == Color::yellow; }),
-	Primitive("green(%s)",     +[](Object x)       -> bool { return x.color == Color::green; }),
-	Primitive("blue(%s)",      +[](Object x)       -> bool { return x.color == Color::blue; }),
-
-	Primitive("rectangle(%s)", +[](Object x)       -> bool { return x.shape == Shape::rectangle; }),
-	Primitive("triangle(%s)",  +[](Object x)       -> bool { return x.shape == Shape::triangle; }),
-	Primitive("circle(%s)",    +[](Object x)       -> bool { return x.shape == Shape::circle; }),
-	
-	Primitive("size1(%s)",     +[](Object x)       -> bool { return x.size == Size::size1; }),
-	Primitive("size2(%s)",     +[](Object x)       -> bool { return x.size == Size::size2; }),
-	Primitive("size3(%s)",     +[](Object x)       -> bool { return x.size == Size::size3; }),
-
-	for(size_t i=0;i<alphabet.length();i++)
-		Primitive("", +[]() -> S { return alphabet.substr(i,1), 10.0/alphabet.length(); }),
 
 	Primitive("\u2205",        +[]()         -> S          { return S(""); }),
-	Primitive("(%s/%s)",        +[](S x. S y)         -> S          { return S(""); }),
+
+	Primitive("(%s/%s)", +[](S x, S y) -> S { 
+		if(x.length() + y.length() > MAX_LENGTH) 
+			throw VMSRuntimeError;
+		else {
+			return x.append("/").append(y);
+		}				
+	}),
+
+	Primitive("(%s,%s)", +[](S x, S y) -> S { 
+		if(x.length() + y.length() > MAX_LENGTH) 
+			throw VMSRuntimeError;
+		else {
+			return x.append(",").append(y);
+		}				
+	}),
+
+	Primitive("cons(%s,%s)", +[](S x, S y) -> S { 
+		if(x.length() + y.length() > MAX_LENGTH) 
+			throw VMSRuntimeError;
+		else {
+			return x.append(y);
+		}				
+	}),
+
+	Primitive("car(%s)", +[](S x) -> S {return (x.empty() ? S("") : S(1,x.at(0)));}),
+	Primitive("cdr(%s)", +[](S x) -> S {return (x.empty() ? S("") : x.substr(1,S::npos));}),
+	Primitive("(%s==%s)",      +[](S x, S y) -> bool       { return x==y; }),
+	Primitive("empty(%s)",     +[](S x) -> bool            { return x.length()==0; }),
 		
 	// but we also have to add a rule for the BuiltinOp that access x, our argument
-	Builtin::X<S>("x", 10.0)
+	Builtin::X<S>("x", 10.0),
+	Builtin::Flip("flip()", 10.0),
+	Builtin::If<S>("if(%s,%s,%s)", 1.0),
 	Builtin::SafeRecurse<S,S>("F(%s)")
 };
 
 
+// Includes critical files. Also defines some variables (mcts_steps, explore, etc.) that get processed from argv 
+#include "Fleet.h" 
 
-// Define a grammar
-class MyGrammar : public Grammar { 
-public:
-	MyGrammar() : Grammar() {
-		add( new Rule(nt_string, BuiltinOp::op_X,            "x",            {},                               10.0) );		
-		add( new Rule(nt_string, BuiltinOp::op_RECURSE,      "F(%s)",        {nt_string},                      2.0) );		
-
-		// here we create an alphabet op with an "arg" that is unpacked below to determine
-		// which character of the alphabet it corresponds to 
-		for(size_t i=0;i<alphabet.length();i++)
-			add( new Rule(nt_string, CustomOp::op_A,            alphabet.substr(i,1),          {},                   10.0/alphabet.length(), i) );
-
-		add( new Rule(nt_string, CustomOp::op_EMPTYSTRING,  "''",           {},                               1.0) );
-
-		add( new Rule(nt_string, CustomOp::op_SEPERATOR,  "(%s/%s)",           {nt_string,nt_string},       1.0) );
-
-		add( new Rule(nt_string, CustomOp::op_ACTION,  "(%s,%s)",           {nt_string,nt_string},         1.0) );
-
-
-		add( new Rule(nt_string, CustomOp::op_CONS,         "cons(%s,%s)",  {nt_string,nt_string},            1.0) );
-		add( new Rule(nt_string, CustomOp::op_CAR,          "car(%s)",      {nt_string},                      1.0) );
-		add( new Rule(nt_string, CustomOp::op_CDR,          "cdr(%s)",      {nt_string},                      1.0) );
-		
-		add( new Rule(nt_string, BuiltinOp::op_IF,           "if(%s,%s,%s)", {nt_bool, nt_string, nt_string},  1.0) );
-		
-		add( new Rule(nt_bool,   BuiltinOp::op_FLIP,         "flip()",       {},                               5.0) );
-		add( new Rule(nt_bool,   CustomOp::op_EMPTY,        "empty(%s)",    {nt_string},                      1.0) );
-		add( new Rule(nt_bool,   CustomOp::op_STREQ,        "(%s==%s)",     {nt_string,nt_string},            1.0) );
-	}
-};
 
 
 /* Define a class for handling my specific hypotheses and data. Everything is defaulty a PCFG prior and 
 // * regeneration proposals, but I have to define a likelihood */
-class MyHypothesis : public LOTHypothesis<MyHypothesis,Node,nt_string, S, S> {
+class MyHypothesis : public LOTHypothesis<MyHypothesis,Node, S, S> {
 public:
-
-	static const size_t MAX_LENGTH = 64; // longest strings cons will handle
-	
-	// I must implement all of these constructors
-	MyHypothesis(Grammar* g, Node v)    : LOTHypothesis<MyHypothesis,Node,nt_string,S,S>(g,v) {}
-	MyHypothesis(Grammar* g)            : LOTHypothesis<MyHypothesis,Node,nt_string,S,S>(g) {}
-	MyHypothesis()                      : LOTHypothesis<MyHypothesis,Node,nt_string,S,S>() {}
+	using Super =  LOTHypothesis<MyHypothesis,Node,S,S>;
+	using Super::Super; // inherit the constructors
 	
 	// Very simple likelihood that just counts up the probability assigned to the output strings
 //	double compute_single_likelihood(const t_datum& x) {
@@ -155,60 +116,27 @@ public:
 		}
 		return lp;
 	}
-	
-	abort_t dispatch_rule(Instruction i, VirtualMachinePool<S,S>* pool, VirtualMachineState<S,S>& vms, Dispatchable<S,S>* loader ) {
-		/* Dispatch the functions that I have defined. Returns NO_ABORT on success. 
-		 * */
-		switch(i.getCustom()) {
-			// this uses CASE_FUNCs which are defined in CaseMacros.h, and which give a nice interface for processing the
-			// different cases. They take a return type, some input types, and a functino to evaluate. 
-			// as in op_CONS below, this function (CASE_FUNC2e) can take an "error" (e) condition, which will cause
-			// an abort			
-			
-			// when we process op_A, we unpack the "arg" into an index into alphabet
-			CASE_FUNC0(CustomOp::op_A,           S,          [i](){ return alphabet.substr(i.arg, 1);} )
-			// the rest are straightforward:
-			CASE_FUNC0(CustomOp::op_EMPTYSTRING, S,          [](){ return S("");} )
-			CASE_FUNC1(CustomOp::op_EMPTY,       bool,  S,   [](const S& s){ return s.size()==0;} )
-			CASE_FUNC2(CustomOp::op_STREQ,       bool,  S,S, [](const S& a, const S& b){return a==b;} )
-			CASE_FUNC1(CustomOp::op_CDR,         S, S,       [](const S& s){ return (s.empty() ? S("") : s.substr(1,S::npos)); } )		
-			CASE_FUNC1(CustomOp::op_CAR,         S, S,       [](const S& s){ return (s.empty() ? S("") : S(1,s.at(0))); } )		
-		
-			
-			CASE_FUNC2e(CustomOp::op_CONS,       S, S,S,
-								[](const S& x, const S& y){ S a = x; a.append(y); return a; },
-								[](const S& x, const S& y){ return (x.length()+y.length()<MAX_LENGTH ? abort_t::NO_ABORT : abort_t::SIZE_EXCEPTION ); }
-								)
-			CASE_FUNC2e(CustomOp::op_SEPERATOR,       S, S,S,
-								[](const S& x, const S& y){ S a = x; a.append("/").append(y); return a; },
-								[](const S& x, const S& y){ return (x.length()+y.length()<MAX_LENGTH ? abort_t::NO_ABORT : abort_t::SIZE_EXCEPTION ); }
-								)
-			CASE_FUNC2e(CustomOp::op_ACTION,       S, S,S,
-								[](const S& x, const S& y){ S a = x; a.append(",").append(y); return a; },
-								[](const S& x, const S& y){ return (x.length()+y.length()<MAX_LENGTH ? abort_t::NO_ABORT : abort_t::SIZE_EXCEPTION ); }
-								)
-			default:
-				assert(0 && " *** You ended up with an invalid argument"); // should never get here
-		}
-		return abort_t::NO_ABORT;
-	}
 };
 
 
 // mydata stores the data for the inference model
 MyHypothesis::t_data mydata;
 // top stores the top hypotheses we have found
-TopN<MyHypothesis> top;
+Fleet::Statistics::TopN<MyHypothesis> top;
 
 
-// define some functions to print out a hypothesis
-void print(MyHypothesis& h, S prefix) {
-	COUT "# ";
-	h.call("", "<err>").print();
-	COUT "\n" << prefix << top.count(h) TAB  h.posterior TAB h.prior TAB h.likelihood TAB h.string() ENDL;
-}
+// // define some functions to print out a hypothesis
+// void print(MyHypothesis& h, S prefix, TopN& top) {
+// 	COUT "# ";
+// 	h.call("", "<err>").print();
+// 	COUT "\n" << prefix << top.count(h) TAB  h.posterior TAB h.prior TAB h.likelihood TAB h.string() ENDL;
+// }
+// void print(MyHypothesis& h) {
+// 	print(h, S("")); // default null prefix
+// }
+
 void print(MyHypothesis& h) {
-	print(h, S("")); // default null prefix
+	COUT top.count(h) TAB  h.posterior TAB h.prior TAB h.likelihood TAB QQ(h.string()) ENDL;
 }
 
 
@@ -235,19 +163,30 @@ int main(int argc, char** argv){
 	using namespace std;
 	
 	// default include to process a bunch of global variables: mcts_steps, mcc_steps, etc
-	auto app = Fleet::DefaultArguments();
+	auto app = Fleet::DefaultArguments("A LOT-based learner of children's sorting algorithms");
 	app.add_option("-a,--alphabet", alphabet, "Alphabet we will use"); 	// add my own args
 	app.add_option("-d,--data", datastr, "escape-semicolon separated list of input data strings");
-	app.add_option("-p,--param", editDisStr, "edit distance parameter");		
+	app.add_option("-p,--param", editDisParam, "edit distance parameter");		
 	CLI11_PARSE(app, argc, argv);
+	Fleet_initialize(); // must happen afer args are processed since the alphabet is in the grammar
 
-	editDisParam = std::stod(editDisStr);
 	top.set_size(ntop); // set by above macro
 
-	Fleet_initialize(); // must happen afer args are processed since the alphabet is in the grammar
+
+	// mydata stores the data for the inference model
+	MyHypothesis::t_data mydata;
 	
+	// top stores the top hypotheses we have found
+	Fleet::Statistics::TopN<MyHypothesis> top(ntop);
 	
-	MyGrammar grammar;
+	// declare a grammar with our primitives
+	Grammar grammar(PRIMITIVES);
+
+	// here we create an alphabet op with an "arg" that stores the character (this is faster than alphabet.substring with i.arg as an index) 
+	// here, op_ALPHABET converts arg to a string (and pushes it)
+	for(size_t i=0;i<alphabet.length();i++) {
+		grammar.add<S>     (BuiltinOp::op_ALPHABET, Q(alphabet.substr(i,1)), 5.0/alphabet.length(), (int)alphabet.at(i)); 
+	}
 
 	
 	//------------------
@@ -259,7 +198,8 @@ int main(int argc, char** argv){
 		mydata.push_back( MyHypothesis::t_datum({S(""), di}) );
 		CERR "# Data: " << di ENDL; // output data to check
 	}
-	cout << "# Edit Distance Paramter: " << editDisStr << endl;
+
+	cout << "# Edit Distance Paramter: " << std::to_string(editDisParam) << endl;
 	
 	//------------------
 	// Run
@@ -268,9 +208,11 @@ int main(int argc, char** argv){
 	MyHypothesis h0(&grammar);
 	h0 = h0.restart();
 	
+
+	ParallelTempering samp(h0, &mydata, top, NTEMPS, 1000.0);
 	tic(); // start the timer
-	ParallelTempering<MyHypothesis> samp(h0, &mydata, callback, 8, 1000.0, false);
-	samp.run(mcmc_steps, runtime, 200, 3000); //30000);
+	// ParallelTempering samp(h0, &mydata, callback, 8, 1000.0, false);
+	samp.run(Control(mcmc_steps, runtime, nthreads), 1000, 3000); //30000);
 
 	tic(); // end timer
 	
@@ -291,7 +233,7 @@ int main(int argc, char** argv){
 
 		for(auto& s : o.values()) { // for each string in the output
 			size_t commaCnt = std::count(s.first.begin(), s.first.end(), ',');
-			// if(s.first.length() == 10) { // TODO: This is not right -- should count the number of +s ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// if(s.first.length() == 10) {
 			if(commaCnt == 9) {
 				string_marginals.addmass(s.first, s.second + (h.posterior - Z)) ;
 			}

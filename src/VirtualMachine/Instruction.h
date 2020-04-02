@@ -26,7 +26,7 @@ class VMSRuntimeError_t : public std::exception {} VMSRuntimeError;
 #endif 
 
 
-// enum class CustomOp { CUSTOM_OPS };
+enum class CustomOp { CUSTOM_OPS };
 
 // These operations are build-in and implemented in VirtualMachineState
 // convenient to make op_NOP=0, so that the default initialization is a NOP

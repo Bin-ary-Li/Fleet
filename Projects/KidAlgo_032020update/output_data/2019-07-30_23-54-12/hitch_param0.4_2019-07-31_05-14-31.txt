@@ -1,0 +1,57 @@
+./main --alphabet=BRG --data=/RB,GB/\;/RB,GB/,/RB,GB/\;/RB,GB/,/RB,GB/,/RB,GB/ --param=0.4 --threads=12 --top=10000 --time=20m
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Running Fleet on binli-HP-Z420-Workstation with PID=6111 by user binli at Wed Jul 31 05:14:31 2019
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Executable checksum: 65f9670c8a5c502caf7ddd64b5a452b3  /proc/6111/exe
+# 	 --input=input.txt
+# 	 --threads=12
+# 	 --mcmc=0
+# 	 --mcts=0
+# 	 --time=20m (1200 seconds)
+# 	 --restart=0
+# 	 --seed=0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-18.2472	"G,R,R,R,R,R,R,R,R,"
+-17.9487	",G,G,G,G,G,G,G,G,R"
+-17.8729	",,,,,,,,,R"
+-17.8729	"G,,,,,,,,,"
+-17.6509	"B,R,R,R,R,R,R,R,R,"
+-17.6378	",G,G,G,G,G,G,G,G,B"
+-17.3932	",R,R,R,R,R,R,R,R,B"
+-17.3932	",R,R,R,R,R,R,R,R,G"
+-17.3709	"G,R,R,R,R,R,R,R,R,R"
+-17.3169	",B,B,B,B,B,B,B,B,R"
+-17.2837	"R,G,G,G,G,G,G,G,G,"
+-17.2837	"B,G,G,G,G,G,G,G,G,"
+-17.1115	"G,B,B,B,B,B,B,B,B,"
+-17.0958	",,,,,,,,,G"
+-17.086	",,,,,,,,,B"
+-17.086	"B,,,,,,,,,"
+-17.0812	"R,,,,,,,,,"
+-17.0566	"G,G,G,G,G,G,G,G,G,R"
+-16.9282	"B,R,R,R,R,R,R,R,R,R"
+-16.8378	"G,G,G,G,G,G,G,G,G,B"
+-16.7088	"/B,/B,/B,/B,/B,/B,/B,/B,/B,"
+-16.5929	",B,B,B,B,B,B,B,B,G"
+-16.5847	"R,B,B,B,B,B,B,B,B,"
+-16.484	",,,,,,,,,"
+-16.1898	"R,R,R,R,R,R,R,R,R,R"
+-16.1506	",R,R,R,R,R,R,R,R,R"
+-16.1119	"G,G,G,G,G,G,G,G,G,"
+-16.1021	"G,G,G,G,G,G,G,G,G,G"
+-15.6604	"R,R,R,R,R,R,R,R,R,"
+-15.6473	",G,G,G,G,G,G,G,G,G"
+-15.6471	"R,R,R,R,R,R,R,R,R,B"
+-15.6471	"R,R,R,R,R,R,R,R,R,G"
+-15.4397	"B,G,G,G,G,G,G,G,G,G"
+-15.4397	"R,G,G,G,G,G,G,G,G,G"
+-15.2315	"B,B,B,B,B,B,B,B,B,R"
+-15.1677	"G,B,B,B,B,B,B,B,B,B"
+-14.8312	"R,B,B,B,B,B,B,B,B,B"
+-14.8312	"B,B,B,B,B,B,B,B,B,G"
+-14.6398	",B,B,B,B,B,B,B,B,B"
+-14.6315	"B,B,B,B,B,B,B,B,B,"
+-14.1381	"B,B,B,B,B,B,B,B,B,B"
+# Global sample count:	400102013
+# Elapsed time:	1200.19 seconds 
+# Samples per second:	333366

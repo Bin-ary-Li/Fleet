@@ -3,26 +3,31 @@
 #include<map>
 #include<vector>
 #include<algorithm>
+#include <iostream>
+#include <assert.h>
+#include <memory>
 
+#include "Miscellaneous.h"
+#include "Numerics.h"
+#include "IO.h"
+
+/**
+ * @class DiscreteDistribution
+ * @author steven piantadosi
+ * @date 03/02/20
+ * @file DiscreteDistribution.h
+ * @brief This stores a distribution from values of T to log probabilities. It is used as the return value from calls with randomness
+ */
 template<typename T>
 class DiscreteDistribution {
-	// This stores a distribution from values of T to log probabilities
-	// it is used as the return value from calls with randomness
 	
 public:
 	std::map<T,double> m; // map from values to log probabilities
 	
-	
-	DiscreteDistribution() {};
-	
-	DiscreteDistribution(const DiscreteDistribution& d) : m(d.m) {
-		
-	}
-	
-	virtual ~DiscreteDistribution() {};
+	DiscreteDistribution() {}
 	
 	virtual T argmax() const {
-		T best{};
+		T best{}; // Note defaults to this when there are none!
 		double bestv = -infinity;
 		for(auto a : m) {
 			if(a.second > bestv) {
@@ -34,11 +39,16 @@ public:
 	}
 	
 	
-	void print(std::ostream& out) { out << this->string();	}
-	void print()                  {	print(std::cout);	}
+	void print(std::ostream& out, unsigned long nprint=0) const { out << this->string(nprint);	}
+	void print(unsigned long nprint=0)                  const {	print(std::cout, nprint);	}
 	
 	
-	std::string string() {
+	std::string string(unsigned long nprint=0) const {
+		/**
+		 * @brief Convert this distribution into a string, printing at most nprint
+		 * @param nprint
+		 * @return 
+		 */
 		
 		// put the strings into a vector
 		std::vector<T> v;
@@ -53,9 +63,10 @@ public:
 		
 		
 		std::string out = "{";
-		for(size_t i=0;i<v.size();i++){
-			out += "'"  + v[i] + "':" + std::to_string(m[v[i]]);
-			if(i < v.size()-1) { out += ", "; }
+		auto upper_bound = (nprint == 0 ? v.size() : std::min(v.size(), nprint));
+		for(size_t i=0;i<upper_bound;i++){
+			out += "'"  + v[i] + "':" + std::to_string(m.at(v[i]));
+			if(i < upper_bound-1) { out += ", "; }
 		}
 		out += "} [Z=" + std::to_string(Z) + ", N=" + std::to_string(v.size()) + "]";
 		
@@ -64,6 +75,12 @@ public:
 	
 		
 	void addmass(T x, double v) {
+		/**
+		 * @brief Add log probability v to type x
+		 * @param x
+		 * @param v
+		 */
+		
 		if(m.find(x) == m.end()) {
 			m[x] = v;
 		}
@@ -73,6 +90,11 @@ public:
 	}
 	
 	const std::map<T,double>& values() const {
+		/**
+		 * @brief Get all of the values in this distribution
+		 * @return 
+		 */
+		
 		return m;
 	}
 	
@@ -83,22 +105,30 @@ public:
 		}
 	}
 	
-	std::vector<T> best(size_t N) {
-		// get the N best
+	std::vector<T> best(size_t N) const {
+		/**
+		 * @brief Get the N best from this distribution
+		 * @param N
+		 * @return 
+		 */
+		
 		std::vector<std::pair<T,double>> v(m.size());
 		std::copy(m.begin(), m.end(), v.begin());
 		std::sort(v.begin(), v.end(), [](auto x, auto y){ return x.second > y.second; }); // put the big stuff first
 		
 		std::vector<T> out;
-		for(size_t i=0;i<MIN(N, v.size());i++){
+		for(size_t i=0;i<std::min(N, v.size());i++){
 			out.push_back(v[i].first);
 		}
 
 		return out;
 	}
 	
-	std::vector<std::pair<T,double>> sorted(bool decreasing=false) {
-		// get a copy that is sorted
+	std::vector<std::pair<T,double>> sorted(bool decreasing=false) const {
+		/**
+		 * @brief Get this distribution as a sorted vector of pairs
+		 * @param decreasing
+		 */
 		std::vector<std::pair<T,double>> v(m.size());
 		std::copy(m.begin(), m.end(), v.begin());
 		if(decreasing)	std::sort(v.begin(), v.end(), [](auto x, auto y){ return x.second > y.second; }); // put the big stuff first
@@ -110,8 +140,14 @@ public:
 	// inherit some interfaces
 	size_t count(T x) const { return m.count(x); }
 	size_t size() const     { return m.size(); }
-	double operator[](T x)  { return m[x]; }
-	double at(T x) const         { return m.at(x); }
+	double operator[](T x)  {
+		if(m.count(x)) return m[x];
+		else		   return -infinity;
+	}
+	double at(T x) const         { 
+		if(m.count(x)) return m.at(x);
+		else		   return -infinity;
+	}
 
 	
 };

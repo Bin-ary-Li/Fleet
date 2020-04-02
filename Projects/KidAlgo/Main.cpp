@@ -210,6 +210,7 @@ int main(int argc, char** argv){
 		mydata.push_back( MyHypothesis::t_datum({S(""), di}) );
 		CERR "# Data: " << di ENDL; // output data to check
 	}
+	cout << "# Edit Distance Paramter: " << editDisStr << endl;
 	
 	//------------------
 	// Run
@@ -220,39 +221,55 @@ int main(int argc, char** argv){
 	
 	tic(); // start the timer
 	ParallelTempering<MyHypothesis> samp(h0, &mydata, callback, 8, 1000.0, false);
-	samp.run(mcmc_steps, runtime, 200, 3000); //30000);	
-	tic(); // end timer
+	samp.run(mcmc_steps, runtime, 200, 3000); //30000);
 
+	tic(); // end timer
 	
 //	tic();
 //	auto thechain = MCMCChain<MyHypothesis>(h0, &mydata, callback);
 //	thechain.run(mcmc_steps, runtime);
 //	tic();
 //	
-	double Z = top.Z();
-	
-	// We have a bunch of hypotheses in "top"
-	DiscreteDistribution<S> string_marginals;
-	for(auto h : top.values()) {
-		auto o = h.call(S(""), S("<err>"), &h, 2048, 2048, -20.0);
 
-		for(auto& s : o.values()) { // for each string in the output
-			size_t commaCnt = std::count(s.first.begin(), s.first.end(), ',');
-			// if(s.first.length() == 10) { // TODO: This is not right -- should count the number of +s ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if(commaCnt == 9) {
-				string_marginals.addmass(s.first, s.second + (h.posterior - Z)) ;
-			}
-		}	
-	}
+
+
+	// double Z = top.Z();
 	
-	for(auto s : string_marginals.sorted()) {
-		COUT s.second TAB QQ(s.first) ENDL;
-	}
+	// // We have a bunch of hypotheses in "top"
+	// DiscreteDistribution<S> string_marginals;
+	// for(auto h : top.values()) {
+	// 	auto o = h.call(S(""), S("<err>"), &h, 2048, 2048, -20.0);
+
+	// 	for(auto& s : o.values()) { // for each string in the output
+	// 		size_t commaCnt = std::count(s.first.begin(), s.first.end(), ',');
+	// 		// if(s.first.length() == 10) { // TODO: This is not right -- should count the number of +s ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// 		if(commaCnt == 9) {
+	// 			string_marginals.addmass(s.first, s.second + (h.posterior - Z)) ;
+	// 		}
+	// 	}	
+	// }
+	
+	// for(auto s : string_marginals.sorted()) {
+	// 	COUT s.second TAB QQ(s.first) ENDL;
+	// }
 		
 	
 	// Show the best we've found
-//	top.print(print);
-	
+	top.print();
+
+	for(auto h : top.values()) {
+		auto o = h.call(S(""), S("<err>"), &h, 2048, 2048, -20.0);
+
+		int cnt = 0;
+		for(auto& s : o.values()) { // for each string in the output
+			cout << s.first << "\n";
+			cnt++;
+			if (cnt > 0) {
+				cnt = 0;
+				break;
+			}
+		} 
+	}
 	
 	COUT "# Global sample count:" TAB FleetStatistics::global_sample_count ENDL;
 	COUT "# Elapsed time:" TAB elapsed_seconds() << " seconds " ENDL;

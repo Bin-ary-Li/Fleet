@@ -10,7 +10,7 @@ mkdir "$output_date_dir"
 data=("R/,/G\;R/,/G,R/,/G\;R/,/G,R/,/G,R/,/G" "/RB,GB/\;/RB,GB/,/RB,GB/\;/RB,GB/,/RB,GB/,/RB,GB/" "G/,/RR\;G/,/RR,G/,/RR\;G/,/RR,G/,/RR,G/,/RR")
 name=("sort" "hitch" "double")
 
-param=(8.0 6.0 4.0 0.97 0.95 0.92 0.87 0.85 0.82 0.77 0.75 0.72)
+param=(0.7 0.8 0.9 1.0 1.2 1.4 1.5)
 
 cnt=0
 
@@ -21,7 +21,7 @@ do
         currentdate=`date +"%Y-%m-%d_%H-%M-%S"`
         output="$output_date_dir/${name[$cnt]}_param${oneparam}_${currentdate}.txt"
         touch "$output"
-        command="./main --alphabet=BRG --data=$onedata --param=$oneparam --threads=12 --top=10000 --time=20m"
+        command="./main --alphabet=BRG --data=$onedata --param=$oneparam --threads=12 --top=10000 --time=30m"
         echo -e $command >> $output
        ./main --alphabet=BRG --data=$onedata --param=$oneparam --threads=12 --top=10000 --time=20m >> $output
 

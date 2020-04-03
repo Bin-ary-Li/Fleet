@@ -1,0 +1,53 @@
+./main --alphabet=BRG --data=R/,/G\;R/,/G,R/,/G\;R/,/G,R/,/G,R/,/G --param=0.7 --threads=12 --top=10000 --time=30m
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Running Fleet on binli-HP-Z420-Workstation with PID=17803 by user binli at 2020-04-02 06:30:40
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Executable checksum: 12e9a29c5a924988e5b9ecdf5508f6c9  /proc/17803/exe
+# 	 --input=input.txt
+# 	 --threads=12
+# 	 --chains=1
+# 	 --mcmc=0
+# 	 --mcts=0
+# 	 --time=20m (1200000 ms)
+# 	 --restart=0
+# 	 --seed=0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Edit Distance Paramter: 0.700000
+-17.4823	"/,/G,/G,/G,/G,/G,/G,/G,/G,/G"
+-17.3398	"R/,R/,R/,R/,R/,R/,R/,R/,R/,/"
+-17.2242	"/,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G"
+-17.1735	"R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,/"
+-16.9466	",G,G,G,G,G,G,G,G,R"
+-16.2676	"B,G,G,G,G,G,G,G,G,G"
+-16.2574	"R/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/,G"
+-16.2574	"R,/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/G"
+-16.2565	"/,/G,/G,/G,/G,/G,/G,/G,/G,G"
+-16.2078	"R,/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/G"
+-16.2032	"R/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/,G"
+-16.1826	"R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/,R"
+-16.1786	"R/,R/,R/,R/,R/,R/,R/,R/,R/,"
+-16.1786	",/G,/G,/G,/G,/G,/G,/G,/G,/G"
+-16.0775	"R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,G"
+-15.9766	"R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,/"
+-15.9431	"R,R,R,R,R,R,R,R,R,B"
+-15.909	",R,R,R,R,R,R,R,R,R"
+-15.8523	",R,R,R,R,R,R,R,R,G"
+-15.7458	"/,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G"
+-15.6694	"G,G,G,G,G,G,G,G,G,G"
+-15.3011	"R,R,R,R,R,R,R,R,R,R"
+-15.3009	"G,G,G,G,G,G,G,G,G,"
+-15.2191	"R,G,G,G,G,G,G,G,G,"
+-15.1476	"R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/,"
+-15.1476	",/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G"
+-15.1193	"R/,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G"
+-15.1193	"R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,/G"
+-14.8531	"R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,"
+-14.0907	"R,R,R,R,R,R,R,R,R,"
+-14.0907	",G,G,G,G,G,G,G,G,G"
+-14.0561	"R,R,R,R,R,R,R,R,R,G"
+-14.0474	"R,G,G,G,G,G,G,G,G,G"
+-13.9536	"R,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,/G"
+-13.7287	"R/,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,G"
+# Global sample count:	440454996
+# Elapsed time:	1200.49 seconds 
+# Samples per second:	366895

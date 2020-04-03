@@ -10,7 +10,7 @@ S datastr  = "011;011011;011011011"; // the data, escape-semicolon separated
 
 const size_t MAX_LENGTH = 64; // longest strings cons will handle
 const double strgamma = 0.99; // penalty on string length
-const size_t NTEMPS = 8;
+const size_t NTEMPS = 12;
 double editDisParam = 1.0;
 
 

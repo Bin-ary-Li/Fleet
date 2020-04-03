@@ -1,0 +1,85 @@
+./main --alphabet=BRG --data=G/,/RR\;G/,/RR,G/,/RR\;G/,/RR,G/,/RR,G/,/RR --param=0.7 --threads=12 --top=10000 --time=30m
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Running Fleet on binli-HP-Z420-Workstation with PID=19298 by user binli at 2020-04-02 11:11:09
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Executable checksum: 12e9a29c5a924988e5b9ecdf5508f6c9  /proc/19298/exe
+# 	 --input=input.txt
+# 	 --threads=12
+# 	 --chains=1
+# 	 --mcmc=0
+# 	 --mcts=0
+# 	 --time=20m (1200000 ms)
+# 	 --restart=0
+# 	 --seed=0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Edit Distance Paramter: 0.700000
+-17.4012	"G/,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/RR"
+-17.3823	"G,G,G,G,G,G,G,G,G,/R/R/R/R/R/R/R/R/R/R"
+-17.3087	"G/,G/,G/,G/,G/,G/,G/,G/,G/,/"
+-17.3068	"/,/R,/R,/R,/R,/R,/R,/R,/R,/R"
+-17.1313	"G/G/G/G/G/G/G/G/G/G/,R,R,R,R,R,R,R,R,R"
+-17.1128	"G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,/"
+-17.1044	"/,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R"
+-17.0966	",RR,RR,RR,RR,RR,RR,RR,RR,RR"
+-16.6744	"G,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,"
+-16.631	",R,R,R,R,R,R,R,R,RR"
+-16.4581	"G/G/G/G/G/G/G/G/,R,R,R,R,R,R,R,R,R"
+-16.4212	"R,R,R,R,R,R,R,R,R,G"
+-16.3997	",/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R"
+-16.379	",R,R,R,R,R,R,R,R,G"
+-16.1119	"G/,/R,/R,/R,/R,/R,/R,/R,/R,"
+-16.1093	"G/,G/,G/,G/,G/,G/,G/,G/,G/,"
+-16.1033	"G,G,RG,RG,RG,RG,RG,RG,RG,RR"
+-16.1001	",/R,/R,/R,/R,/R,/R,/R,/R,/R"
+-16.0949	",R,R,R,R,R,R,R,R,R/R/R/R/R/R/R/R/R/"
+-16.0687	"G/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/,R"
+-16.064	"G/G,R/G,R/G,R/G,R/G,R/G,R/G,R/G,R/,R"
+-16.0576	"G/,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,B"
+-16.0555	"R,RR,RR,RR,RR,RR,RR,RR,RR,"
+-16.0421	"G/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/,"
+-15.9504	"G,RR,RR,RR,RR,RR,RR,RR,RR,RR"
+-15.9096	",RR,RR,RR,RR,RR,RR,RR,RR,R"
+-15.903	"G/,G/,G/,G/,G/,G/,G/,G/,G/,R"
+-15.899	"G/,/R,/R,/R,/R,/R,/R,/R,/R,R"
+-15.8673	",G,G,G,G,G,G,G,G,G"
+-15.8636	"G/,R/,R/,R/,R/,R/,R/,R/,R/,R"
+-15.801	"G,RR,RR,RR,RR,RR,RR,RR,RR,"
+-15.7996	"G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,R"
+-15.7914	"G,G,G,G,G,G,G,G,G,B"
+-15.7885	"B,R,R,R,R,R,R,R,R,R"
+-15.7639	"G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,/"
+-15.7372	"G/,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G"
+-15.7363	"G/G/G/G/G/G/G/G/G/R,R,R,R,R,R,R,R,R,"
+-15.7221	"/R/R/R/R/R/R/R/R/R,R,R,R,R,R,R,R,R,"
+-15.6648	",G,G,G,G,G,G,G,G,R"
+-15.6401	"G/,G/RR,G/RR,G/RR,G/RR,G/RR,G/RR,G/RR,G/RR,G/RR"
+-15.4182	"G/G/R,G/G/R,G/G/R,G/G/R,G/G/R,G/G/R,G/G/R,G/G/R,G//R,"
+-15.3692	"/,/R,/R,/R,/R,/R,/R,/R,/R,R"
+-15.317	"/,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R"
+-15.304	"G,GR,GR,GR,GR,GR,GR,GR,GR,R"
+-15.1982	"G/,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,"
+-15.1679	"G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/G,G/,"
+-15.1614	"G,G,G,G,G,G,G,G,G,G"
+-15.158	"R,R,R,R,R,R,R,R,R,R"
+-15.1335	",R,RR,RR,RR,RR,RR,RR,RR,RR"
+-15.1314	"G/,G/RR,G/RR,G/RR,G/RR,G/RR,G/RR,G/RR,G/RR,R"
+-15.1151	",/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R,R/R"
+-15.0953	"G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,/R"
+-15.0953	"G/,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R"
+-14.7708	"G,R,R,R,R,R,R,R,R,"
+-14.7377	"R,R,R,R,R,R,R,R,R,"
+-13.9808	"G,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,/R"
+-13.9026	"G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,"
+-13.8874	"G,G,G,G,G,G,G,G,G,"
+-13.8719	",R,R,R,R,R,R,R,R,R"
+-13.5415	"G,,G,R,G,R,G,R,G,R"
+-13.5202	"G,G,G,G,G,G,G,G,G,R"
+-13.5029	"G,R,R,R,R,R,R,R,R,R"
+-13.3099	",R,R,R/,R,R,R/,R,R/,R/"
+-13.2554	"G/,G/R,G/R,G/R,G/R,G/R,G/R,G/R,G/R,R"
+-13.1148	"G,G,G,/G,G,G,/G,G,/G,/"
+-12.9672	"/R,/R,R,/R,R,R,/R,R,R,"
+-11.9223	"/,R/,R,R/,R,R,R/,R,R,R"
+# Global sample count:	438450565
+# Elapsed time:	1200.4 seconds 
+# Samples per second:	365255
